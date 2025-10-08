@@ -19,6 +19,6 @@ public class HelloWorld extends OpMode {
 
     @Override
     public void loop() {
-    // hello
+    // hello from bo
     }
 }

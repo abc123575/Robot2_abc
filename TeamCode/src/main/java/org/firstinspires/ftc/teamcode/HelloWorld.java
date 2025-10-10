@@ -1,15 +1,14 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 
-
-
-@TeleOp
-public class HelloWorld extends OpMode {
+@Autonomous
+public class HelloWorld extends OpMode  {
 
 
     @Override

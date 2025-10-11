@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 
 @TeleOp
@@ -18,6 +19,8 @@ public class GamePad extends OpMode {
 
 
     private DcMotor motor;
+    private DcMotor motor2;
+    private DcMotor motor3;
 
 
 
@@ -27,6 +30,8 @@ public class GamePad extends OpMode {
     @Override
     public void init(){
         motor = hardwareMap.get(DcMotor.class, "motor1");
+        motor2 = hardwareMap.get(DcMotor.class, "motor2");
+        motor3 = hardwareMap.get(DcMotor.class, "motor3");
     }
 
 
@@ -71,11 +76,31 @@ public class GamePad extends OpMode {
 
 
         if (rearRightBumper == true) {
-            motor.setPower(0.5);
+            motor.setPower(1);
         } else {
             motor.setPower(0);
         }
 
+        if (speedForward_ry > 0) {
+            motor2.setDirection(DcMotor.Direction.REVERSE);
+            motor2.setPower(speedForward_ry);
+        }
+        else if (speedForward_ry < 0) {
+            motor2.setDirection(DcMotor.Direction.FORWARD);
+            motor2.setPower(-1 * speedForward_ry);
+        }
+        else if (speedForward_ly > 0) {
+            motor3.setDirection(DcMotor.Direction.REVERSE);
+            motor3.setPower(speedForward_ly);
+        }
+        else if (speedForward_ly < 0) {
+            motor3.setDirection(DcMotor.Direction.FORWARD);
+            motor3.setPower(-1 * speedForward_ly);
+        }
+            else {
+            motor2.setPower(0);
+            motor3.setPower(0);
+        }
 
 
 

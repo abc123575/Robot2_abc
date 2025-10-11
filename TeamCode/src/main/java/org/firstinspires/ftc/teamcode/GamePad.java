@@ -13,21 +13,21 @@ public class GamePad extends OpMode {
     }
 
     @Override
-    public void loop(){
-        double speedForward_ly  = gamepad1.left_stick_y;
+    public void loop() {
+        double speedForward_ly = gamepad1.left_stick_y;
         double speedForward_lx = gamepad1.left_stick_x;
         double speedForward_rx = gamepad1.right_stick_x;
         double speedForward_ry = gamepad1.right_stick_y;
         double diff = gamepad1.left_stick_x - gamepad1.right_stick_x;
         double rearTriggerR = gamepad1.right_trigger;
         double rearTriggerL = gamepad1.left_trigger;
-        double sumTriggers = gamepad1.left_trigger + gamepad1.right_trigger ;
-        double rearLeftBumper = gamepad1.left_bumper;
-        double rearRightBumper = gamepad1.right_bumper;
+        double sumTriggers = gamepad1.left_trigger + gamepad1.right_trigger;
+        Boolean rearLeftBumper = gamepad1.left_bumper;
+        Boolean rearRightBumper = gamepad1.right_bumper;
 
 
         telemetry.addData("left x", speedForward_lx);
-        telemetry.addData(  "left y", speedForward_ly);
+        telemetry.addData("left y", speedForward_ly);
         telemetry.addData("right x", speedForward_rx);
         telemetry.addData("right y", speedForward_ry);
 
@@ -43,7 +43,6 @@ public class GamePad extends OpMode {
         telemetry.addData("Rear Right Bumper", rearRightBumper); //comment
 
 
-
-
+    }
 
 }

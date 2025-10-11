@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
 
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
@@ -8,10 +12,16 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 @TeleOp
 public class GamePad extends OpMode {
 
+    private DcMotor motor;
+
+
+
     @Override
     public void init(){
-
+        motor = hardwareMap.get(DcMotor.class, "motor1");
     }
+
+
 
     @Override
     public void loop() {
@@ -42,6 +52,12 @@ public class GamePad extends OpMode {
 
         telemetry.addData("Rear Left Bumper", rearLeftBumper);
         telemetry.addData("Rear Right Bumper", rearRightBumper); //comment
+
+        if (rearRightBumper == true) {
+            motor.setPower(0.5);
+        } else {
+            motor.setPower(0);
+        }
 
 
     }

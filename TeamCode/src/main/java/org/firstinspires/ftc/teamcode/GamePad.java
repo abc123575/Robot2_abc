@@ -21,9 +21,9 @@ public class GamePad extends OpMode {
         double diff = gamepad1.left_stick_x - gamepad1.right_stick_x;
         double rearTriggerR = gamepad1.right_trigger;
         double rearTriggerL = gamepad1.left_trigger;
-        double sumTriggers = gamepad1.left_trigger + gamepad1.right_trigger;
-        Boolean rearLeftBumper = gamepad1.left_bumper;
-        Boolean rearRightBumper = gamepad1.right_bumper;
+        double sumTriggers = (gamepad1.left_trigger + gamepad1.right_trigger)/2;
+        boolean rearLeftBumper = gamepad1.left_bumper;
+        boolean rearRightBumper = gamepad1.right_bumper;
 
 
         telemetry.addData("left x", speedForward_lx);

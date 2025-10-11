@@ -99,7 +99,7 @@ public class StarterBotTeleop extends OpMode {
          * right to a number much higher than your set point, make sure that your encoders are plugged
          * into the port right beside the motor itself. And that the motors polarity is consistent
          * through any wiring.
-         */
+         *///
         launcher.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         /*

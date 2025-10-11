@@ -40,8 +40,7 @@ public class GamePad extends OpMode {
         telemetry.addData("Sum of Triggers", sumTriggers);
 
         telemetry.addData("Rear Left Bumper", rearLeftBumper);
-        telemetry.addData("Rear Right Bumper", rearRightBumper);
-    }
+        telemetry.addData("Rear Right Bumper", rearRightBumper); //comment
 
 
 

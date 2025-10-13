@@ -35,6 +35,8 @@ public class GamePad extends OpMode {
         motor = hardwareMap.get(DcMotor.class, "motor1");
         motor2 = hardwareMap.get(DcMotor.class, "motor2");
         motor3 = hardwareMap.get(DcMotor.class, "motor3");
+        servo1 = hardwareMap.get(CRServo.class, "servo1");
+        servo2 = hardwareMap.get(CRServo.class, "servo2");
     }
 
 

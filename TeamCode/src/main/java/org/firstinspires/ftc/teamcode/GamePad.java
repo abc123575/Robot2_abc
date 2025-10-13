@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 
@@ -12,7 +13,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-
+import com.qualcomm.robotcore.hardware.CRServo;
 
 @TeleOp
 public class GamePad extends OpMode {
@@ -21,6 +22,8 @@ public class GamePad extends OpMode {
     private DcMotor motor;
     private DcMotor motor2;
     private DcMotor motor3;
+    private CRServo servo1;
+    private CRServo servo2;
 
 
 
@@ -74,12 +77,16 @@ public class GamePad extends OpMode {
         telemetry.addData("Rear Left Bumper", rearLeftBumper);
         telemetry.addData("Rear Right Bumper", rearRightBumper); //comment
 
+                //launchers
+
 
         if (rearTriggerR > 0) {
             motor.setPower(rearTriggerR);
         } else {
             motor.setPower(0);
         }
+
+                //wheels
 
         if (speedForward_ry > 0) {
             motor2.setDirection(DcMotor.Direction.REVERSE);
@@ -103,8 +110,33 @@ public class GamePad extends OpMode {
         }
 
 
+        // ...
+        if (gamepad1.a) { // Press A to run servo1 forward
+            servo1.setPower(1.0);
+
+            telemetry.addData("Servo1", "Running");
+        }
+        else if (gamepad1.b) { // Press B to run servo2 forward
+            servo2.setPower(1.0);
+            telemetry.addData("Servo2", "Running");
+        }
+        else {
+            // If neither button is pressed, stop both servos
+            servo1.setPower(0.0);
+            servo2.setPower(0.0);
+            telemetry.addData("Servos", "Stopped");
+        }
+//...
+
+
+        telemetry.addData("Servo1 Power", servo1.getPower());
+        telemetry.addData("Servo2 Power", servo2.getPower());
+
+
+
 
     }
+
 
 
 }

@@ -45,6 +45,7 @@ public class GamePad extends OpMode {
         // ...
         if (gamepad1.a) { // Press A to run servo1 forward
             servo1.setPower(1.0);
+
             telemetry.addData("Servo1", "Running");
         }
         else if (gamepad1.b) { // Press B to run servo2 forward

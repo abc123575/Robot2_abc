@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -15,6 +16,10 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.CRServo;
 
+
+@Autonomous
+
+    
 @TeleOp
 public class GamePad extends OpMode {
 
@@ -130,10 +135,8 @@ public class GamePad extends OpMode {
         }
 //...
 
-
         telemetry.addData("Servo1 Power", servo1.getPower());
         telemetry.addData("Servo2 Power", servo2.getPower());
-
 
 
 

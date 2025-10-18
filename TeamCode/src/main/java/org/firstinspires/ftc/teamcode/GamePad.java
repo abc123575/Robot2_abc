@@ -47,7 +47,6 @@ public class GamePad extends OpMode {
 
 
 
-
     @Override
     public void loop() {
         double speedForward_ly = gamepad1.left_stick_y;

@@ -17,14 +17,12 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.CRServo;
 
 
-@Autonomous
-
     
 @TeleOp
 public class GamePad extends OpMode {
 
 
-    private DcMotor motor;
+    private DcMotor motor1;
     private DcMotor motor2;
     private DcMotor motor3;
     private CRServo servo1;
@@ -37,7 +35,7 @@ public class GamePad extends OpMode {
 
     @Override
     public void init(){
-        motor = hardwareMap.get(DcMotor.class, "motor1");
+        motor1 = hardwareMap.get(DcMotor.class, "motor1");
         motor2 = hardwareMap.get(DcMotor.class, "motor2");
         motor3 = hardwareMap.get(DcMotor.class, "motor3");
         servo1 = hardwareMap.get(CRServo.class, "servo1");
@@ -86,9 +84,9 @@ public class GamePad extends OpMode {
 
 
         if (rearTriggerR > 0) {
-            motor.setPower(rearTriggerR);
+            motor1.setPower(rearTriggerR);
         } else {
-            motor.setPower(0);
+            motor1.setPower(0);
         }
 
                 //wheels

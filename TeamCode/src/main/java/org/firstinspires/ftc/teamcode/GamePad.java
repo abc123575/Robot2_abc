@@ -13,6 +13,11 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+
 @TeleOp(name = "GamePad + UDP Float", group = "Net")
 public class GamePad extends OpMode {
 
@@ -144,3 +149,12 @@ public class GamePad extends OpMode {
         if (servo2 != null) servo2.setPower(0);
     }
 }
+
+
+
+
+
+        // --- Mecanum Crab (LS) + Gyro ---
+
+
+

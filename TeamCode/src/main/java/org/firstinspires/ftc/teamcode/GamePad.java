@@ -17,7 +17,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-
+@SuppressWarnings("unused")
 @TeleOp(name = "GamePad + UDP Float", group = "Net")
 public class GamePad extends OpMode {
 

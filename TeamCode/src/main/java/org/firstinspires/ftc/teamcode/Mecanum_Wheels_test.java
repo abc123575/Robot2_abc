@@ -33,7 +33,7 @@ public class Mecanum_Wheels_test extends OpMode {
     private boolean backPrev = false;
     private boolean yPrev = false;
 
-    // tuning
+
     private static final double DEADBAND = 0.05;
     private static final double ROT_SCALE = 0.8; // limit rotation aggressiveness if using right stick
 

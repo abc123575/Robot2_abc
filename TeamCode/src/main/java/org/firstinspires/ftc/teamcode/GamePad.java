@@ -21,7 +21,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 @TeleOp(name = "GamePad + UDP Float", group = "Net")
 public class GamePad extends OpMode {
 
-    private DcMotor motor;
+    private DcMotor motor1;
     private DcMotor motor2;
     private DcMotor motor3;
     private CRServo servo1;
@@ -37,14 +37,14 @@ public class GamePad extends OpMode {
 
     @Override
     public void init() {
-        motor = hardwareMap.get(DcMotor.class, "motor1");
+        motor1 = hardwareMap.get(DcMotor.class, "motor1");
         motor2 = hardwareMap.get(DcMotor.class, "motor2");
         motor3 = hardwareMap.get(DcMotor.class, "motor3");
         servo1 = hardwareMap.get(CRServo.class, "servo1");
         servo2 = hardwareMap.get(CRServo.class, "servo2");
 
         // Optional: consistent stopping behavior
-        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motor3.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
@@ -112,7 +112,7 @@ public class GamePad extends OpMode {
         double p2 = Range.clip(ry * (0.5 + 0.5 * Math.abs(udpVal)), -1, 1);
         double p3 = udpVal; // direct UDP on motor3, if you want
 
-        motor.setPower(p1);
+        motor1.setPower(p1);
         motor2.setPower(p2);
         motor3.setPower(p3);
 
@@ -142,7 +142,7 @@ public class GamePad extends OpMode {
         }
 
         // Safe stop
-        if (motor != null) motor.setPower(0);
+        if (motor1 != null) motor1.setPower(0);
         if (motor2 != null) motor2.setPower(0);
         if (motor3 != null) motor3.setPower(0);
         if (servo1 != null) servo1.setPower(0);

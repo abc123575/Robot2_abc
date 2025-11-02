@@ -27,6 +27,13 @@ public class GamePad extends OpMode {
     private CRServo servo1;
     private CRServo servo2;
 
+    private DcMotor motor5;
+
+    private DcMotor motor6;
+    private DcMotor motor7;
+    private DcMotor motor8;
+
+
     // --- UDP config ---
     private static final int UDP_PORT = 9000;
     private static final int UDP_TIMEOUT_MS = 200; // short timeout so we can shut down fast

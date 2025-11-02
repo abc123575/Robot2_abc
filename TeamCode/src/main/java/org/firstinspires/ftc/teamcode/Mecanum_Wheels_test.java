@@ -23,7 +23,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 public class Mecanum_Wheels_test extends OpMode {
 
     // Drive motors
-    private DcMotor frontLeft, frontRight, backLeft, backRight;
+    private DcMotor motor1, motor2, motor3, motor4;
 
     // IMU
     private IMU imu;
@@ -39,18 +39,18 @@ public class Mecanum_Wheels_test extends OpMode {
 
     @Override
     public void init() {
-        frontLeft  = hardwareMap.get(DcMotor.class, "frontLeft");
-        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
-        backLeft   = hardwareMap.get(DcMotor.class, "backLeft");
-        backRight  = hardwareMap.get(DcMotor.class, "backRight");
+        motor1  = hardwareMap.get(DcMotor.class, "motor1");
+        motor2 = hardwareMap.get(DcMotor.class, "motor2");
+        motor3   = hardwareMap.get(DcMotor.class, "motor3");
+        motor4  = hardwareMap.get(DcMotor.class, "motor4");
 
         // Set motor directions to match your wiring/gearboxes
-        frontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-        frontRight.setDirection(DcMotorSimple.Direction.FORWARD);
-        backRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        motor1.setDirection(DcMotorSimple.Direction.REVERSE);
+        motor2.setDirection(DcMotorSimple.Direction.REVERSE);
+        motor3.setDirection(DcMotorSimple.Direction.FORWARD);
+        motor4.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        for (DcMotor m : new DcMotor[]{frontLeft, frontRight, backLeft, backRight}) {
+        for (DcMotor m : new DcMotor[]{motor1, motor2, motor3, motor4}) {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             m.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
@@ -134,10 +134,10 @@ public class Mecanum_Wheels_test extends OpMode {
         fl *= mag; fr *= mag; bl *= mag; br *= mag;
 
         // --- Send to motors ---
-        frontLeft.setPower(fl);
-        frontRight.setPower(fr);
-        backLeft.setPower(bl);
-        backRight.setPower(br);
+        motor1.setPower(fl);
+        motor2.setPower(fr);
+        motor3.setPower(bl);
+        motor4.setPower(br);
 
         // --- Telemetry ---
         telemetry.addData("Mode", fieldCentric ? "Field-centric" : "Robot-centric");
@@ -149,7 +149,7 @@ public class Mecanum_Wheels_test extends OpMode {
 
     @Override
     public void stop() {
-        for (DcMotor m : new DcMotor[]{frontLeft, frontRight, backLeft, backRight}) {
+        for (DcMotor m : new DcMotor[]{motor1, motor2, motor3, motor4}) {
             m.setPower(0);
         }
     }

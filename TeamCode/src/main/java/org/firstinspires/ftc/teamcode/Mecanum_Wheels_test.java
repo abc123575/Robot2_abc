@@ -3,154 +3,197 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.util.RobotLog;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
-//
-import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-@SuppressWarnings("unused")
-@TeleOp(name = "Mecanum Crab (LS) + Gyro", group = "Drive")
+
+@TeleOp(name = "Mecanum + UDP Spin", group = "Drive")
 public class Mecanum_Wheels_test extends OpMode {
 
-    // Drive motors
-    private DcMotor motor1, motor2, motor3, motor4;
-
-    // IMU
+    // Motors
+    private DcMotor FLmotor, FRmotor, BLmotor, BRmotor;
     private IMU imu;
-    private boolean fieldCentric = false;
 
-    // simple button edge detectors
+    // Field-centric and control toggles
+    private boolean fieldCentric = false;
     private boolean backPrev = false;
     private boolean yPrev = false;
 
-
+    // Rotation control
     private static final double DEADBAND = 0.05;
-    private static final double ROT_SCALE = 0.8; // limit rotation aggressiveness if using right stick
+    private static final double ROT_SCALE = 0.8;
+
+    // --- UDP config ---
+    private static final int UDP_PORT = 9000;
+    private static final int UDP_TIMEOUT_MS = 200;
+    private volatile boolean running = false;
+    private Thread udpThread;
+    private DatagramSocket udpSocket;
+    private final AtomicReference<Double> udpSpin = new AtomicReference<>(0.0);
 
     @Override
     public void init() {
-        motor1  = hardwareMap.get(DcMotor.class, "motor1");
-        motor2 = hardwareMap.get(DcMotor.class, "motor2");
-        motor3   = hardwareMap.get(DcMotor.class, "motor3");
-        motor4  = hardwareMap.get(DcMotor.class, "motor4");
+        // --- Hardware map ---
+        FLmotor = hardwareMap.get(DcMotor.class, "FLmotor");
+        FRmotor = hardwareMap.get(DcMotor.class, "FRmotor");
+        BLmotor = hardwareMap.get(DcMotor.class, "BLmotor");
+        BRmotor = hardwareMap.get(DcMotor.class, "BRmotor");
 
-        // Set motor directions to match your wiring/gearboxes
-        motor1.setDirection(DcMotorSimple.Direction.REVERSE);
-        motor2.setDirection(DcMotorSimple.Direction.REVERSE);
-        motor3.setDirection(DcMotorSimple.Direction.FORWARD);
-        motor4.setDirection(DcMotorSimple.Direction.FORWARD);
+        // --- Motor directions ---
+        FLmotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        BLmotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        FRmotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        BRmotor.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        for (DcMotor m : new DcMotor[]{motor1, motor2, motor3, motor4}) {
+        for (DcMotor m : new DcMotor[]{FLmotor, FRmotor, BLmotor, BRmotor}) {
             m.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             m.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
 
         // --- IMU init ---
         imu = hardwareMap.get(IMU.class, "imu");
-
-        // Set the physical orientation of your Hub on the robot.
-        // Update these if your Hub is mounted differently.
         RevHubOrientationOnRobot.LogoFacingDirection logo = RevHubOrientationOnRobot.LogoFacingDirection.UP;
-        RevHubOrientationOnRobot.UsbFacingDirection usb  = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
-
+        RevHubOrientationOnRobot.UsbFacingDirection usb = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
         IMU.Parameters imuParams = new IMU.Parameters(new RevHubOrientationOnRobot(logo, usb));
         imu.initialize(imuParams);
 
-        telemetry.addLine("Mecanum Crab + Gyro");
-        telemetry.addLine("Back = toggle field-centric");
-        telemetry.addLine("Y = zero heading");
-        telemetry.addLine("Left stick = crab, Right X = rotate");
+        // --- Start UDP listener thread ---
+        running = true;
+        udpThread = new Thread(this::listenUdp, "UDP-Spin-Listener");
+        udpThread.setDaemon(true);
+        udpThread.start();
+
+        telemetry.addLine("Mecanum + UDP Spin initialized");
+        telemetry.addLine("LS = move | RS X = manual turn | UDP = camera spin correction");
         telemetry.update();
+    }
+
+    // --- Background thread: listen for UDP packets ---
+    private void listenUdp() {
+        byte[] buffer = new byte[64];
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+        try (DatagramSocket socket = new DatagramSocket(UDP_PORT)) {
+            udpSocket = socket;
+            socket.setSoTimeout(UDP_TIMEOUT_MS);
+            RobotLog.d("UDP spin socket listening on port " + UDP_PORT);
+
+            while (running && !Thread.currentThread().isInterrupted()) {
+                try {
+                    socket.receive(packet);
+                    String data = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8).trim();
+                    double value;
+                    try {
+                        value = Double.parseDouble(data);
+                    } catch (NumberFormatException nfe) {
+                        RobotLog.e("UDP parse error: '" + data + "'");
+                        continue;
+                    }
+
+                    value = Range.clip(value, -1.0, 1.0); // normalize between -1 and 1
+                    udpSpin.set(value);
+
+                } catch (SocketTimeoutException ste) {
+                    // ignore timeouts
+                } catch (Exception e) {
+                    if (running) RobotLog.e("UDP receive error: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            RobotLog.e("UDP socket error: " + e.getMessage());
+        } finally {
+            udpSocket = null;
+            RobotLog.d("UDP spin listener stopped.");
+        }
     }
 
     @Override
     public void loop() {
-        // --- Read gamepad ---
-        double lx = gamepad1.left_stick_x;   // +right
-        double ly = -gamepad1.left_stick_y;  // +forward (invert Y)
-        double rx = gamepad1.right_stick_x * ROT_SCALE; // rotation input (set to 0 for pure crab)
+        // --- Gamepad input ---
+        double lx = gamepad1.left_stick_x;   // strafe
+        double ly = -gamepad1.left_stick_y;  // forward/back
+        double rx = gamepad1.right_stick_x * ROT_SCALE; // manual turn
+
+        // --- UDP rotation value ---
+        double udpVal = udpSpin.get(); // from camera (- = left, + = right)
+        double udpTurn = Range.clip(udpVal * 0.6, -1, 1); // scale to limit spin speed
 
         // Deadband
         lx = (Math.abs(lx) < DEADBAND) ? 0 : lx;
         ly = (Math.abs(ly) < DEADBAND) ? 0 : ly;
         rx = (Math.abs(rx) < DEADBAND) ? 0 : rx;
 
-        // --- Field-centric toggle (edge detect on Back) ---
+        // Combine manual rotation and camera rotation
+        double totalTurn = rx + udpTurn;
+        totalTurn = Range.clip(totalTurn, -1.0, 1.0);
+
+        // --- Field-centric toggle ---
         boolean backNow = gamepad1.back;
-        if (backNow && !backPrev) {
-            fieldCentric = !fieldCentric;
-        }
+        if (backNow && !backPrev) fieldCentric = !fieldCentric;
         backPrev = backNow;
 
-        // --- Zero heading (edge detect on Y) ---
+        // --- Reset heading ---
         boolean yNow = gamepad1.y;
-        if (yNow && !yPrev) {
-            imu.resetYaw();
-        }
+        if (yNow && !yPrev) imu.resetYaw();
         yPrev = yNow;
 
-        // --- Transform stick vector by -heading if field-centric ---
+        // --- Field-centric transform ---
         double x = lx;
         double y = ly;
-
         if (fieldCentric) {
             YawPitchRollAngles ypr = imu.getRobotYawPitchRollAngles();
-            double heading = ypr.getYaw(AngleUnit.RADIANS); // +CCW
-
+            double heading = ypr.getYaw(AngleUnit.RADIANS);
             double cosA = Math.cos(-heading);
             double sinA = Math.sin(-heading);
-
             double rotX = x * cosA - y * sinA;
             double rotY = x * sinA + y * cosA;
-
             x = rotX;
             y = rotY;
         }
 
-        // --- Mecanum mix (X-strfe, Y-forward, R-rotate) ---
-        double fl = y + x + rx;
-        double fr = y - x - rx;
-        double bl = y - x + rx;
-        double br = y + x - rx;
+        // --- Mecanum drive mix ---
+        double fl = y + x + totalTurn;
+        double fr = y - x - totalTurn;
+        double bl = y - x + totalTurn;
+        double br = y + x - totalTurn;
 
-        // Normalize so |power| ≤ 1
+        // Normalize
         double max = Math.max(1.0, Math.max(Math.abs(fl),
                 Math.max(Math.abs(fr), Math.max(Math.abs(bl), Math.abs(br)))));
+        fl /= max;
+        fr /= max;
+        bl /= max;
+        br /= max;
 
-        fl /= max; fr /= max; bl /= max; br /= max;
-
-        // Optional: scale by stick magnitude for finer low-speed control
-        double mag = Range.clip(Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y), 0, 1);
-        fl *= mag; fr *= mag; bl *= mag; br *= mag;
-
-        // --- Send to motors ---
-        motor1.setPower(fl);
-        motor2.setPower(fr);
-        motor3.setPower(bl);
-        motor4.setPower(br);
+        // --- Apply power ---
+        FLmotor.setPower(fl);
+        FRmotor.setPower(fr);
+        BLmotor.setPower(bl);
+        BRmotor.setPower(br);
 
         // --- Telemetry ---
-        telemetry.addData("Mode", fieldCentric ? "Field-centric" : "Robot-centric");
+        telemetry.addData("UDP Spin", udpVal);
+        telemetry.addData("Turn (combined)", totalTurn);
         telemetry.addData("Heading (deg)", imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
-        telemetry.addData("LX/LY", "%.2f / %.2f", gamepad1.left_stick_x, gamepad1.left_stick_y);
-        telemetry.addData("Powers", "FL %.2f  FR %.2f  BL %.2f  BR %.2f", fl, fr, bl, br);
+        telemetry.addData("Power", "FL %.2f | FR %.2f | BL %.2f | BR %.2f", fl, fr, bl, br);
         telemetry.update();
     }
 
     @Override
     public void stop() {
-        for (DcMotor m : new DcMotor[]{motor1, motor2, motor3, motor4}) {
-            m.setPower(0);
-        }
+        running = false;
+        if (udpSocket != null && !udpSocket.isClosed()) udpSocket.close();
+        if (udpThread != null) udpThread.interrupt();
+        for (DcMotor m : new DcMotor[]{FLmotor, FRmotor, BLmotor, BRmotor}) m.setPower(0);
     }
 }

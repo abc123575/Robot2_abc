@@ -5,16 +5,18 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+
 
 import java.util.List;
 
-public class AprilTagWebcam {
+public class AprilTagWebcamExample {
 
     private AprilTagProcessor aprilTagProcessor;
     private VisionPortal visionPortal;
     private Telemetry telemetry;
 
-    public void init(HardwareMap hardwareMap, Telemetry telemetry) {
+    public voidinit(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
 
         // Create the AprilTag processor

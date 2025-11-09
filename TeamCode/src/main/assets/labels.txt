@@ -1,0 +1,2 @@
+0 green_balls
+1 purple_balls

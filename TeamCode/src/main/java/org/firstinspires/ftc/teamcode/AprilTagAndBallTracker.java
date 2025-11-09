@@ -23,12 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * AprilTag + Ball Tracker (Tuned for Real-World Use)
- * - Looser HSV thresholds for easier detection
- * - Gentle filtering and morphology for stability
- * - Debug overlays show color pixel counts and detections
+ * AprilTag + Ball Tracker (Overlap-Aware Version)
+ * Handles multiple and overlapping balls using distance transform segmentation.
  */
-@Autonomous(name = "AprilTag + Ball Tracker (Tuned)", group = "Vision")
+@Autonomous(name = "AprilTag + Ball Tracker (Overlap-Aware)", group = "Vision")
 public class AprilTagAndBallTracker extends LinearOpMode {
 
     private VisionPortal visionPortal;
@@ -37,17 +35,14 @@ public class AprilTagAndBallTracker extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        // --- AprilTag setup ---
         aprilTag = new AprilTagProcessor.Builder()
                 .setDrawAxes(true)
                 .setDrawTagOutline(true)
                 .setTagFamily(AprilTagProcessor.TagFamily.TAG_36h11)
                 .build();
 
-        // --- Color tracking processor ---
         colorProcessor = new ColorBallProcessor();
 
-        // --- VisionPortal setup ---
         visionPortal = new VisionPortal.Builder()
                 .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
                 .addProcessor(aprilTag)
@@ -76,25 +71,21 @@ public class AprilTagAndBallTracker extends LinearOpMode {
     }
 
     /**
-     * VisionProcessor for detecting purple and green balls.
+     * Processor for purple/green ball detection with overlap handling.
      */
     static class ColorBallProcessor implements VisionProcessor {
-
-        private int detectedColor = 0; // 0 = none, 1 = purple, 2 = green
+        private int detectedColor = 0;
         private double purpleCount = 0;
         private double greenCount = 0;
 
         @Override
-        public void init(int width, int height, CameraCalibration calibration) {
-            // Nothing to initialize
-        }
+        public void init(int width, int height, CameraCalibration calibration) {}
 
         @Override
         public Object processFrame(Mat frame, long captureTimeNanos) {
             Mat hsv = new Mat();
             Imgproc.cvtColor(frame, hsv, Imgproc.COLOR_RGB2HSV);
 
-            // --- Wider HSV ranges for robustness ---
             Scalar lowerPurple = new Scalar(115, 50, 50);
             Scalar upperPurple = new Scalar(165, 255, 255);
             Scalar lowerGreen  = new Scalar(30, 40, 40);
@@ -105,25 +96,21 @@ public class AprilTagAndBallTracker extends LinearOpMode {
             Core.inRange(hsv, lowerPurple, upperPurple, purpleMask);
             Core.inRange(hsv, lowerGreen, upperGreen, greenMask);
 
-            // --- Gentle morphological smoothing ---
-            Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(3,3));
+            Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(3, 3));
             Imgproc.morphologyEx(purpleMask, purpleMask, Imgproc.MORPH_CLOSE, kernel);
             Imgproc.morphologyEx(greenMask, greenMask, Imgproc.MORPH_CLOSE, kernel);
 
-            // --- Count active pixels for debug ---
             purpleCount = Core.countNonZero(purpleMask);
             greenCount = Core.countNonZero(greenMask);
 
-            // --- Detect both colors individually ---
-            detectBalls(frame, purpleMask, new Scalar(255, 0, 255), "PURPLE");
-            detectBalls(frame, greenMask, new Scalar(0, 255, 0), "GREEN");
+            // Separate overlapping balls for each color
+            segmentAndDetect(frame, purpleMask, new Scalar(255, 0, 255), "PURPLE");
+            segmentAndDetect(frame, greenMask, new Scalar(0, 255, 0), "GREEN");
 
-            // --- Determine dominant color for telemetry ---
             if (purpleCount > 2000 && purpleCount > greenCount) detectedColor = 1;
             else if (greenCount > 2000 && greenCount > purpleCount) detectedColor = 2;
             else detectedColor = 0;
 
-            // --- Debug overlays on frame ---
             Imgproc.putText(frame, "PurpleCount: " + (int)purpleCount, new Point(20,40),
                     Imgproc.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255,0,255), 2);
             Imgproc.putText(frame, "GreenCount: " + (int)greenCount, new Point(20,70),
@@ -137,28 +124,36 @@ public class AprilTagAndBallTracker extends LinearOpMode {
         }
 
         /**
-         * Detects and draws circular blobs for a given mask.
+         * Enhanced detection: uses distance transform to separate overlapping blobs.
          */
-        private void detectBalls(Mat frame, Mat mask, Scalar drawColor, String label) {
+        private void segmentAndDetect(Mat frame, Mat mask, Scalar drawColor, String label) {
+            // --- Distance transform for splitting ---
+            Mat dist = new Mat();
+            Imgproc.distanceTransform(mask, dist, Imgproc.DIST_L2, 3);
+            Core.normalize(dist, dist, 0, 255, Core.NORM_MINMAX);
+
+            // Threshold to get distinct peaks
+            Mat distThresh = new Mat();
+            Imgproc.threshold(dist, distThresh, 60, 255, Imgproc.THRESH_BINARY);
+
+            // Convert to 8-bit
+            distThresh.convertTo(distThresh, 0);
+
+            // Find contours (each peak roughly one ball)
             List<MatOfPoint> contours = new ArrayList<>();
             Mat hierarchy = new Mat();
-            Imgproc.findContours(mask, contours, hierarchy,
-                    Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+            Imgproc.findContours(distThresh, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
             for (MatOfPoint contour : contours) {
                 double area = Imgproc.contourArea(contour);
-                if (area < 400) continue; // Skip small specks
+                if (area < 200) continue;
 
                 MatOfPoint2f contour2f = new MatOfPoint2f(contour.toArray());
                 Point center = new Point();
                 float[] radius = new float[1];
                 Imgproc.minEnclosingCircle(contour2f, center, radius);
 
-                double circleArea = Math.PI * radius[0] * radius[0];
-                double circularity = area / circleArea;
-
-                // Allow moderately round blobs
-                if (circularity > 0.4 && circularity < 1.5 && radius[0] > 6 && radius[0] < 200) {
+                if (radius[0] > 5 && radius[0] < 200) {
                     Imgproc.circle(frame, center, (int) radius[0], drawColor, 3);
                     Imgproc.putText(frame, label,
                             new Point(center.x - 30, center.y - radius[0] - 10),
@@ -169,6 +164,8 @@ public class AprilTagAndBallTracker extends LinearOpMode {
             }
 
             hierarchy.release();
+            dist.release();
+            distThresh.release();
             for (MatOfPoint c : contours) c.release();
         }
 
@@ -178,9 +175,7 @@ public class AprilTagAndBallTracker extends LinearOpMode {
                                 int onscreenHeight,
                                 float scaleBmpPxToCanvasPx,
                                 float scaleCanvasDensity,
-                                Object userContext) {
-            // Not used; OpenCV draws directly on frame
-        }
+                                Object userContext) {}
 
         public int getDetectedColor() {
             return detectedColor;
